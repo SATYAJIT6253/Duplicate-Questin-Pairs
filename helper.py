@@ -4,32 +4,26 @@ import distance
 from fuzzywuzzy import fuzz
 import pickle
 import numpy as np
-import re
-from bs4 import BeautifulSoup
-import distance
-from fuzzywuzzy import fuzz
-import pickle
-import numpy as np
+
 cv = pickle.load(open('cv.pkl', 'rb'))
 
 
-def test_common_words(q1, q2):
-    w1 = set(map(lambda word: word.lower().strip(), q1.split(" ")))
-    w2 = set(map(lambda word: word.lower().strip(), q2.split(" ")))
-    return len(w1 & w2)
+def cnt_common_words(q1, q2):
+    cmn1 = set(map(lambda word: word.lower().strip(), q1.split(" ")))
+    cmn2 = set(map(lambda word: word.lower().strip(), q2.split(" ")))
+    return len(cmn1 & cmn2)
 
 
-def test_total_words(q1, q2):
-    w1 = set(map(lambda word: word.lower().strip(), q1.split(" ")))
-    w2 = set(map(lambda word: word.lower().strip(), q2.split(" ")))
-    return (len(w1) + len(w2))
+def cnt_total_words(q1, q2):
+    cmn1 = set(map(lambda word: word.lower().strip(), q1.split(" ")))
+    cmn2 = set(map(lambda word: word.lower().strip(), q2.split(" ")))
+    return len(cmn1) + len(cmn2)
 
 
 def token_faetures_function(q1, q2):
     # this is for handling zero case so that infinite will not come
     SAFE_DIV = 0.0001
     token_features = [0.0] * 8
-
     # splitting the question to tokens
     q1_tokens = q1.split()
     q2_tokens = q2.split()
@@ -40,7 +34,6 @@ def token_faetures_function(q1, q2):
 
     # calculating stopwords
     stop_words = pickle.load(open('stopwords.pkl', 'rb'))
-
     q1_stop_words = set([word for word in q1_tokens if word in stop_words])
     q2_stop_words = set([word for word in q2_tokens if word in stop_words])
 
@@ -97,7 +90,7 @@ def length_features_function(q1, q2):
     return length_features
 
 
-def fetch_fuzzy_features(q1, q2):
+def fuzzy_features_(q1, q2):
     fuzzy_features = [0.0] * 4
 
     # fuzz_ratio
@@ -263,7 +256,7 @@ def basic_preprocessing(q):
     q = q.replace("'re", "are")
     q = q.replace("'ll", " will")
 
-    return q;
+    return q
 
 
 def query_point_creator(q1, q2):
@@ -280,9 +273,9 @@ def query_point_creator(q1, q2):
     input_query.append(len(q1.split(" ")))
     input_query.append(len(q2.split(" ")))
 
-    input_query.append(test_common_words(q1, q2))
-    input_query.append(test_total_words(q1, q2))
-    input_query.append(round(test_common_words(q1, q2) / test_total_words(q1, q2), 2))
+    input_query.append(cnt_common_words(q1, q2))
+    input_query.append(cnt_total_words(q1, q2))
+    input_query.append(round(cnt_common_words(q1, q2) / cnt_total_words(q1, q2), 2))
 
     # fetch token features
     token_features = token_faetures_function(q1, q2)
@@ -293,7 +286,7 @@ def query_point_creator(q1, q2):
     input_query.extend(length_features)
 
     # fetch fuzzy features
-    fuzzy_features = fetch_fuzzy_features(q1, q2)
+    fuzzy_features = fuzzy_features_(q1, q2)
     input_query.extend(fuzzy_features)
 
     # bow feature for q1
